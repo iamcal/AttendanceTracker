@@ -1,0 +1,148 @@
+<?
+	########################################################################
+
+	function db_query($sql){
+
+		if ($_REQUEST[debug]){
+
+			echo "<div style=\"border: 1px solid #000; background: #fff; padding: 4px; margin: 1px;\">SQL: $sql";
+			flush();
+
+			$start = microtime_ms();
+			$result = mysql_query($sql);
+			$end = microtime_ms();
+
+			$time = $end - $start;
+
+			$GLOBALS[debug][db_query_count]++;
+			$GLOBALS[debug][db_query_time] += $time;
+
+			echo " ($time ms)</div>";
+			flush();
+		}else{
+			$result = mysql_query($sql);
+		}
+
+		if (!$result){
+			echo "<hr /><pre>";
+			echo "ERROR: ".HtmlSpecialChars(mysql_error())."\n";
+			echo "SQL  : ".HtmlSpecialChars($sql)."\n";
+			echo "STACK: ".HtmlSpecialChars(db_trace())."\n";
+			echo "</pre><hr />\n";
+		}
+
+		return $result;
+	}
+
+	########################################################################
+
+	function db_fetch_hash($result){
+
+		if ($_REQUEST[debug]){
+			$start = microtime_ms();
+			$row = mysql_fetch_array($result, MYSQL_ASSOC);
+			$end = microtime_ms();
+
+			$GLOBALS[debug][db_fetch_count]++;
+			$GLOBALS[debug][db_fetch_time] += $end - $start;
+
+			return $row;
+		}
+
+		return mysql_fetch_array($result, MYSQL_ASSOC);
+	}
+
+	########################################################################
+
+	function db_fetch_list($result){
+
+		if ($_REQUEST[debug]){
+			$start = microtime_ms();
+			$row = mysql_fetch_array($result, MYSQL_NUM);
+			$end = microtime_ms();
+
+			$GLOBALS[debug][db_fetch_count]++;
+			$GLOBALS[debug][db_fetch_time] += $end - $start;
+
+			return $row;
+		}
+
+		return mysql_fetch_array($result, MYSQL_NUM);
+	}
+
+	########################################################################
+
+	function db_insert($table, $hash){
+
+		$fields = array_keys($hash);
+
+		$sql = "INSERT INTO `$table` (`".implode('`,`',$fields)."`) VALUES ('".implode("','",$hash)."')";
+
+		$result = db_query($sql);
+
+		return mysql_insert_id();
+	}
+
+	########################################################################
+
+	function db_num_rows($result){
+
+		return mysql_num_rows($result);
+	}
+
+	########################################################################
+
+	function db_update($table, $hash, $where){
+
+		$bits = array();
+		foreach(array_keys($hash) as $k){
+			$bits[] = "`$k`='$hash[$k]'";
+		}
+
+		#debug_console("UPDATE `$table` SET ".implode(', ',$bits)." WHERE $where");
+
+		$result = db_query("UPDATE `$table` SET ".implode(', ',$bits)." WHERE $where");
+
+		return $result;
+	}
+
+	########################################################################
+
+	function db_trace(){
+
+		$trace = debug_backtrace();
+
+		while (strstr($trace[0]['function'], 'db_')){
+
+			array_shift($trace);
+		}
+
+		$items = array();
+
+		foreach($trace as $t){
+			$items[] = $t['function'].'()';
+		}
+
+		return implode(' -> ', array_reverse($items));
+	}
+
+	########################################################################
+
+	function microtime_ms(){
+		list($usec, $sec) = explode(" ", microtime()); 
+		return round(1000 * ((float)$usec + (float)$sec));
+	}
+
+	########################################################################
+
+	function db_info(){
+
+		echo "<table border=\"1\">\n";
+		echo "<tr><th>Operation</th><th>Count</th><th>Time</th></tr>\n";
+		echo "<tr><td>DB Query</td><td>{$GLOBALS[debug][db_query_count]}</td><td>{$GLOBALS[debug][db_query_time]} ms</td></tr>\n";
+		echo "<tr><td>DB Fetch</td><td>{$GLOBALS[debug][db_fetch_count]}</td><td>{$GLOBALS[debug][db_fetch_time]} ms</td></tr>\n";
+		echo "</table>\n";
+	}
+
+	########################################################################
+?>

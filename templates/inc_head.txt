@@ -1,0 +1,26 @@
+<html>
+<head>
+<title>The Eternal - Raid Attendance</title>
+<style>{literal}
+
+body {
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+p.error {
+	background-color: pink;
+}
+
+a.inlineedit {
+	font-size: 12px;
+	color: silver;
+}
+
+form {
+	margin: 0;
+	padding: 0;
+}
+
+</style>{/literal}
+</head>
+<body>

@@ -1,0 +1,61 @@
+{include file='inc_head.txt'}
+
+<h1>Raid Detail</h1>
+
+<p><a href="./">&laquo; Back to all raids</a></p>
+
+<p>
+	<b>Date:</b> {$raid.d}<br />
+	<b>Focus:</b> {$raid.who}<br />
+</p>
+
+<h2>
+	General Attendance
+	<a href="raid_edit_attendance.php?d={$raid.d}" class="inlineedit">edit</a>
+</h2>
+
+<table border="1" cellpadding="4" cellspacing="0">
+	<tr>
+{foreach from=$class_map item='class' key='classid'}
+		<th>{$class}</th>
+{/foreach}
+	</tr>
+	<tr valign="top">
+{foreach from=$class_map item='class' key='classid'}
+		<td>
+{foreach from=$names item='row'}
+{if $row.member_class_id == $classid}
+{assign var='name' value=$row.member_name}
+{if $attendance.$name}
+			<div style="background-color: #00C000;">
+{else}
+			<div style="color: silver;">
+{/if}
+				{$row.member_name}
+			</div>
+{/if}
+{/foreach}
+		</td>
+{/foreach}
+	</tr>
+</table>
+
+<h2>
+	Timeline
+	<a href="raid_edit_timeline.php?d={$raid.d}" class="inlineedit">edit</a>
+</h2>
+
+<table border="1" cellpadding="4" cellspacing="0">
+{foreach from=$timeline item='row'}
+	<tr>
+		<td>{$row.t|format_time}</td>
+{if $row.event=='loot'}
+		<td><a href="loot.php?id={$row.id}">{$row.event|format_event}</a></td>
+{else}
+		<td>{$row.who} {$row.event|format_event}</td>
+{/if}
+	</tr>
+{/foreach}
+</table>
+
+{include file='inc_foot.txt'}

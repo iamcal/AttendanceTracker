@@ -1,0 +1,38 @@
+{include file='inc_head.txt'}
+
+<h1>Add a new raid</h1>
+
+{if $date_taken}
+<p class="error">There is already a raid logged for that date</p>
+{/if}
+
+<form action="raid_add.php" method="post">
+<input type="hidden" name="done" value="1" />
+
+<table border="1">
+
+	<tr>
+		<td>Date:</td>
+		<td>
+			<select name="date_y">{insert_year_edit sel=$y}</select>
+			<select name="date_m">{insert_month_edit sel=$m}</select>
+			<select name="date_d">{insert_day_edit sel=$d}</select>
+		</td>
+	</tr>
+
+	<tr>
+		<td>Focus:</td>
+		<td><input type="text" name="focus" value="" /></td>
+	</tr>
+
+	<tr>
+		<td>&nbsp;</td>
+		<td><input type="submit" value="Add Raid" /></td>
+	</tr>
+
+</table>
+
+
+</form>
+
+{include file='inc_foot.txt'}

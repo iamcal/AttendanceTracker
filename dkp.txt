@@ -1,0 +1,131 @@
+<?
+	#
+	# $Id: dkp.txt,v 1.1 2007/08/09 06:24:56 cal Exp $
+	#
+
+	########################################################################################################################
+
+	function load_dkp_standings(){
+
+		#
+		# load event-to-tier mapping
+		#
+
+		$event_to_tier = array();
+
+		$result = mysql_query("SELECT * FROM eqdkp_bees_multidkp2event");
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+
+			$tier = 1;
+			if ($row[multidkp2event_multi_id] == 1){ $tier = 4; }
+			if ($row[multidkp2event_multi_id] == 2){ $tier = 5; }
+			if ($row[multidkp2event_multi_id] == 3){ $tier = 6; }
+
+			$event_to_tier[$row[multidkp2event_eventname]] = $tier;
+		}
+
+
+		#
+		# load all raids
+		#
+
+		$raids = array();
+
+		$result = mysql_query("SELECT * FROM eqdkp_bees_raids");
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+
+			$row[tier] = $event_to_tier[$row[raid_name]];
+
+			$raids[$row[raid_id]] = $row;
+		}
+	
+
+		#
+		# load my adjustments
+		#
+
+		$adjusts = array();
+
+		$result = mysql_query("SELECT * FROM eqdkp_bees_adjustments");
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+
+			$tier = $event_to_tier[$row[raid_name]];
+
+			$adjusts[$row[member_name]][$tier] += $row[adjustment_value];
+		}
+#dumper($adjusts);
+#exit;
+
+
+		#
+		# load my raids
+		#
+
+		$earned = array();
+
+		$result = mysql_query("SELECT * FROM eqdkp_bees_raid_attendees");
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+
+			$raid = $raids[$row[raid_id]];
+
+			$earned[$row[member_name]][$raid[tier]] += $raid[raid_value];
+		}
+
+#dumper($earned);
+#exit;
+
+
+
+		#
+		# load my spends
+		#
+
+		$spent = array();
+
+		$result = mysql_query("SELECT * FROM eqdkp_bees_items");
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+
+			$raid = $raids[$row[raid_id]];
+
+			$spent[$row[item_buyer]][$raid[tier]] += $row[item_value];
+		}
+
+
+		#
+		# get member list
+		#
+
+		$members = array();
+
+		$result = mysql_query("SELECT * FROM eqdkp_bees_members");
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)){
+
+			$members[] = $row[member_name];
+		}
+
+
+		#
+		# fill in missing numbers
+		#
+
+		$standings = array();
+
+		foreach ($members as $name){
+			foreach (array(4,5,6) as $t){
+
+				$x_adjust = floatval($adjusts[$name][$t]);
+				$x_earned = floatval($earned[$name][$t]);
+				$x_spent = floatval($spent[$name][$t]);
+
+				$standings[$name][$t] = $x_adjust + $x_earned - $x_spent;
+
+				#echo "\$standings[$name][$t] = $x_adjust + $x_earned - $x_spent;<br />";
+			}
+		}
+
+		return $standings;
+	}
+
+	########################################################################################################################
+
+?>

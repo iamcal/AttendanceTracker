@@ -1,0 +1,16 @@
+<?
+	$dir = dirname(__FILE__);
+
+	require "$dir/smarty_2.6.18/Smarty.class.php";
+
+	$smarty = new Smarty;
+
+	$smarty->template_dir = "$dir/templates/";
+	$smarty->compile_dir = "$dir/templates_c/";
+
+	$smarty->use_sub_dirs = false;
+	#$smarty->debugging = true;
+	$smarty->compile_check = 1;
+	$smarty->force_compile = 0;
+
+?>

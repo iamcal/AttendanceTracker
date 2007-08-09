@@ -1,0 +1,551 @@
+<?
+	########################################################################
+
+	function get_raid_calendar(){
+
+		#
+		# get raid dates
+		#
+
+		$dates = array();
+		$d_map = array();
+
+		$result = db_query("SELECT * FROM et_attendance_days ORDER BY d ASC");
+		while ($row = db_fetch_hash($result)){
+
+			list($y, $m, $d) = explode('-', $row[d]);
+
+			$row[t] = mktime(0, 0, 0, $m, $d, $y);
+
+			$dates[] = $row;
+			$d_map[$row[d]] = $row;
+		}
+
+		$lo = $dates[0][d];
+		$hi = $dates[count($dates)-1][d];
+
+
+		#
+		# create the raid calendar
+		#
+
+		$calendar = array();
+
+		list($lo_y, $lo_m, $lo_d) = explode('-', $lo);
+		list($hi_y, $hi_m, $hi_d) = explode('-', $hi);
+
+		$inc = 0;
+		$week = 1;
+
+		while (1){
+
+			$today = mktime(0, 0, 0, $lo_m, $lo_d+$inc, $lo_y);
+
+			$t = date('Y-m-d', $today);
+			list($t_y, $t_m, $t_d) = explode('-', $t);
+
+			$calendar[$week][] = $t;
+
+			if (date('w', $today) == '1'){ $week++; }
+
+			$inc++;
+			if ($hi_y == $t_y && $hi_m == $t_m && $hi_d == $t_d){ break; }
+		}
+
+
+		#
+		# convert the calendar into real raid rows
+		#
+
+		foreach ($calendar as $week => $days){
+
+			$calendar[$week] = array();
+
+			foreach ($days as $d){
+
+				if ($d_map[$d]){
+
+					$calendar[$week][$d] = $d_map[$d];
+				}
+			}
+		}
+
+		return array(
+			'calendar'	=> $calendar,
+			'dates'		=> $d_map,
+		);
+	}
+
+	########################################################################
+
+	function percentage_color($value){
+
+		if ($value == 100){ return '#00C000'; }
+
+		if ($value > 80){ return '#40FF40'; }
+		if ($value > 60){ return '#80FF80'; }
+		if ($value > 40){ return '#FF8080'; }
+		if ($value > 20){ return '#FF4040'; }
+		if ($value > 0){ return '#C00000'; }
+
+		return '#ccc';
+
+	}
+
+	$smarty->register_modifier('percentage_color', 'percentage_color');
+
+	########################################################################
+
+	function insert_year_edit($args){
+
+		$out = '';
+
+		for ($i=2007; $i<=2010; $i++){
+
+			$sel = $args[sel] == $i ? ' selected' : '';
+			$out .= "<option value=\"$i\"$sel>$i</option>";
+		}
+
+		return $out;
+	}
+
+	$smarty->register_function('insert_year_edit', 'insert_year_edit');
+
+	########################################################################
+
+	function insert_month_edit($args){
+
+		$out = '';
+
+		for ($i=1; $i<=12; $i++){
+
+			$sel = $args[sel] == $i ? ' selected' : '';
+			$lab = date('F', mktime(0,0,0,$i,1,2007));
+			$out .= "<option value=\"$i\"$sel>$lab</option>";
+		}
+
+		return $out;
+	}
+
+	$smarty->register_function('insert_month_edit', 'insert_month_edit');
+
+	########################################################################
+
+	function insert_day_edit($args){
+
+		$out = '';
+
+		for ($i=1; $i<=31; $i++){
+
+			$sel = $args[sel] == $i ? ' selected' : '';
+			$lab = date('jS', mktime(0,0,0,1,$i,2007));
+			$out .= "<option value=\"$i\"$sel>$lab</option>";
+		}
+
+		return $out;
+	}
+
+	$smarty->register_function('insert_day_edit', 'insert_day_edit');
+
+	########################################################################
+
+	function update_raid_times($d){
+
+		#
+		# load stuff we need
+		#
+
+		$raid = db_fetch_hash(db_query("SELECT * FROM et_attendance_days WHERE d='$d'"));
+
+
+		$events = array();
+
+		$result = db_query("SELECT * FROM et_attendance_timeline WHERE d='$d' ORDER BY t ASC");
+		while ($row = db_fetch_hash($result)){
+
+			$events[] = $row;
+		}
+
+
+		$attendance = array();
+
+		$result = db_query("SELECT * FROM et_attendance_who WHERE d='$d'");
+		while ($row = db_fetch_hash($result)){
+
+			$attendance[$row[who]] = $row[mins];
+		}
+
+
+		#
+		# step 1 - calculate the total raid time based on start/end events
+		#
+
+		$start_time = 0;
+		$end_time = 0;
+		$minutes = 0;
+
+		foreach ($events as $row){
+			if ($row[event] == 'start'){
+				$start_time = $row[t];
+			}
+			if ($row[event] == 'end'){
+				$end_time = $row[t];
+			}
+		}
+
+		if (!$start_time){
+			$minutes = 0;
+		}else{
+			if (!$end_time){
+				# guess end time based on last event
+				$end_time = $events[count($events)-1][t];
+			}
+
+			$start_ts = strtotime($start_time);
+			$end_ts = strtotime($end_time);
+
+			if ($end_ts > $start_ts){
+
+				$minutes = round(($end_ts - $start_ts) / 60);
+			}else{
+				$minutes = 0;
+			}
+		}
+
+		if ($minutes != $raid[mins]){
+
+			db_query("UPDATE et_attendance_days SET mins=$minutes WHERE d='$d'");
+		}
+
+
+		#
+		# step 2 - get the attendance list correct
+		# (if people are missing from attendance but have timeline items,
+		#  then we need to add them to the attendance table)
+		#
+
+		foreach ($events as $row){
+
+			if ($row[event] == 'start') continue;
+			if ($row[event] == 'end') continue;
+			if (!$row[who]) continue;
+
+			if (!isset($attendance[$row[who]])){
+
+				$attendance[$row[who]] = 999999;
+
+				db_insert('et_attendance_who', array(
+
+					'd'	=> $d,
+					'who'	=> AddSlashes($row[who]),
+					'mins'	=> 0,
+				));
+			}
+		}
+
+
+		#
+		# step 3 - first assume all present were there 100%
+		#
+
+		$times = array();
+
+		foreach ($attendance as $k => $junk){
+
+			$times[$k] = $minutes;
+		}
+
+
+		#
+		# step 3 - calculate the time present for partials
+		#
+
+		if ($minutes){
+
+			$in_now = array();
+			$parts = array();
+			$has_event = array();
+
+			foreach ($events as $row){
+
+				if (is_adding_event($row[event])){
+
+					if (!$in_now[$row[who]]){
+
+						$in_now[$row[who]] = $row[t];
+					}
+				}
+
+				if (is_removing_event($row[event])){
+
+					$in = $start_time;
+					$out = $row[t];
+
+					if ($in_now[$row[who]]){
+
+						$in = $in_now[$row[who]];
+
+						unset($in_now[$row[who]]);
+					}else{
+
+						#
+						# got a leaving event without a joining event
+						#
+						# we assume they've been there since the start, but if we've 
+						# already seen them leave then skip this event
+						#
+
+						if ($has_event[$row[who]]){
+
+							continue;
+						}
+					}
+
+					$parts[] = array(
+						'who'	=> $row[who],
+						'in'	=> $in,
+						'out'	=> $out,
+					);
+
+					$has_event[$row[who]] = 1;
+				}
+			}
+
+			foreach ($in_now as $who => $start){
+
+				$parts[] = array(
+					'who'	=> $who,
+					'in'	=> $start,
+					'out'	=> $end_time,
+				);
+
+				$has_event[$who] = 1;
+			}
+		}
+
+#dumper($minutes);
+#dumper($events);
+#dumper($parts);
+#dumper($has_event);
+
+		foreach ($has_event as $who => $junk){
+
+			$times[$who] = 0;
+		}
+
+		foreach ($parts as $part){
+
+			$start_ts = strtotime($part[in]);
+			$end_ts = strtotime($part[out]);
+
+			if ($end_ts > $start_ts){
+
+				$minutes = round(($end_ts - $start_ts) / 60);
+
+				$times[$part[who]] += $minutes;
+			}
+		}
+
+
+		#
+		# step 4 - update the time spent for all present
+		#
+
+		foreach ($times as $k => $mins){
+
+			if ($attendance[$k] != $mins){
+
+				db_query("UPDATE et_attendance_who SET mins=$mins WHERE d='$d' AND who='$k'");
+			}
+		}
+	}
+
+	########################################################################
+
+	function is_adding_event($event){
+
+		if ($event == 'onlist'){ return 1; }
+		if ($event == 'joined'){ return 1; }
+		return 0;
+	}
+
+	########################################################################
+
+	function is_removing_event($event){
+
+		if ($event == 'offlist'){ return 1; }
+		if ($event == 'left'){ return 1; }
+		return 0;
+	}
+
+	########################################################################
+
+	function is_user_event($event){
+
+		if (is_adding_event($event)){ return 1; }
+		if (is_removing_event($event)){ return 1; }
+		if ($event == 'list-raid'){ return 1; }
+		if ($event == 'raid-list'){ return 1; }
+		if ($event == 'mains'){ return 1; }
+
+		return 0;
+	}
+
+	########################################################################
+
+	function get_events(){
+
+		return array(
+			"joined"	=> "joined raid",
+			"left"		=> "left raid",
+			"onlist"	=> "joined list",
+			"offlist"	=> "left list",
+			"start"		=> "raid start",
+			"end"		=> "raid end",
+			"loot"		=> "loot event",
+			"list-raid"	=> "list to raid",
+			"raid-list"	=> "raid to list",
+			"mains"		=> "switch mains",
+		);
+	}
+
+
+	########################################################################
+
+	function parse_time($t, $d){
+
+		$date = $d;
+		$t = trim($t);
+
+
+		#
+		# determine am/pm
+		#
+
+		$pm = 1;
+
+		if (preg_match('!\s*(am|pm)$!i', $t, $m)){
+
+			$t = preg_replace('!\s*(am|pm)$!i', '', $t);
+
+			if (StrToLower($m[1]) == 'am'){ $pm = 0; }
+		}
+
+
+		#
+		# find hours and minutes
+		#
+
+		$h = 0;
+		$i = 0;
+
+		if (preg_match('!^(\d+):(\d+)$!', $t, $m)){
+
+			$h = $m[1];
+			$i = $m[2];
+
+		}else if (preg_match('!^(\d+)$!', $t, $m)){
+
+			$h = $m[1];
+
+		}else{
+
+			die("can't parse time \"$t\"!");
+		}
+		
+
+		if ($h > 12){
+
+			# 24h format - leave as-is
+
+		}else{
+
+			if ($pm){
+
+				$h += 12;
+				if ($h == 24){ $h = 0; }
+
+			}else{
+				if ($h > 8){
+
+					# morning before
+				}else{
+					# morning after
+
+					$d_ts = strtotime($date);
+					$tmp_y = date('Y', $d_ts);
+					$tmp_m = date('n', $d_ts);
+					$tmp_d = date('j', $d_ts);
+
+					$d_ts_2 = mktime(0,0,0,$tmp_m,$tmp_d+1,$tmp_y);
+
+					$date = date('Y-m-d', $d_ts_2);
+				}
+			}
+		}
+
+		$time = sprintf("%02d:%02d:00", $h, $i);
+
+		return "$date $time";
+	}
+
+	########################################################################
+
+	function get_sorted_timeline($d){
+
+		$timeline = array();
+
+		$result = db_query("SELECT * FROM et_attendance_timeline WHERE d='$d' ORDER BY t ASC");
+		while ($row = db_fetch_hash($result)){
+
+			$timeline[] = $row;
+		}
+
+		usort($timeline, 'sort_timeline');
+
+		return $timeline;
+	}
+
+	function sort_timeline($a, $b){
+
+		$ts_a = strtotime($a[t]);
+		$ts_b = strtotime($b[t]);
+
+		if ($ts_a > $ts_b){ return 1; }
+		if ($ts_a < $ts_b){ return -1; }
+
+		if ($a[event] == 'start'){ return -1; }
+		if ($b[event] == 'start'){ return 1; }
+
+		if ($a[event] == 'end'){ return 1; }
+		if ($b[event] == 'end'){ return -1; }
+
+		return 0;
+	}
+
+	########################################################################
+
+	function format_time($t){
+
+		$ts = strtotime($t);
+
+		return date('g:i a', $ts);
+	}
+
+	$smarty->register_modifier('format_time', 'format_time');
+
+	########################################################################
+
+	function format_event($e){
+
+		$map = get_events();
+
+		if ($map[$e]) return $map[$e];
+
+		return $e;
+	}
+
+	$smarty->register_modifier('format_event', 'format_event');
+
+	########################################################################
+?>

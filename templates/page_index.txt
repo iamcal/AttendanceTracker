@@ -1,0 +1,83 @@
+{include file='inc_head.txt'}
+
+<h1>Raid Attendance</h1>
+
+<p><a href="raid_add.php">Add a new raid</a></p>
+
+<table border="0" cellspacing="2">
+	<tr>
+		<td>&nbsp;</td>
+{foreach from=$calendar.calendar item='week'}
+		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+{foreach from=$week item='day'}
+		<td align="center" style="background-color: #ccf">{'l'|date:$day.t}</td>
+{/foreach}
+{/foreach}
+		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td>&nbsp;</td>
+		<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		<td>&nbsp;</td>
+	</tr>
+	<tr>
+		<td style="background-color: #ccf"><b>Player</b></td>
+{foreach from=$calendar.calendar item='week'}
+		<td>&nbsp;</td>
+{foreach from=$week item='day'}
+		<td align="right" style="background-color: #ccf"><b><a href="raid.php?d={$day.d}" style="color: #000">{$day.d}</a></b></td>
+{/foreach}
+{/foreach}
+		<td>&nbsp;</td>
+		<td style="background-color: #ccf"><b>Player</b></td>
+		<td>&nbsp;</td>
+		<td style="background-color: #ccf"><b>Average</b></td>
+	</tr>
+	<tr>
+		<td>&nbsp;</td>
+{foreach from=$calendar.calendar item='week'}
+		<td>&nbsp;</td>
+{foreach from=$week item='day'}
+		<td align="center" style="background-color: #ccf">{$day.who}</td>
+{/foreach}
+{/foreach}
+		<td>&nbsp;</td>
+		<td>&nbsp;</td>
+		<td>&nbsp;</td>
+		<td>&nbsp;</td>
+	</tr>
+	<tr>
+		<td>&nbsp;</td>
+{foreach from=$calendar.calendar item='week'}
+		<td>&nbsp;</td>
+{foreach from=$week item='day'}
+		<td>&nbsp;</td>
+{/foreach}
+{/foreach}
+		<td>&nbsp;</td>
+		<td>&nbsp;</td>
+		<td>&nbsp;</td>
+		<td>&nbsp;</td>
+	</tr>
+{foreach from=$names item='name'}
+	<tr>
+		<td style="background-color: #ccf"><b><a href="member.php?n={$name}" style="color: #000">{$name}</a></b></td>
+{foreach from=$calendar.calendar item='week'}
+		<td>&nbsp;</td>
+{foreach from=$week item='day'}
+{if $day.mins}
+{capture assign='key'}{$day.d}-{$name}{/capture}
+{if $attendance.$key}{assign var='per' value=$attendance.$key.per}{else}{assign var='per' value=0}{/if}
+		<td align="right" style="background-color: {$per|percentage_color}">{$per}%</td>
+{else}
+		<td align="center">-</td>
+{/if}
+{/foreach}
+{/foreach}
+		<td>&nbsp;</td>
+		<td style="background-color: #ccf"><b><a href="member.php?n={$name}" style="color: #000">{$name}</a></b></td>
+		<td>&nbsp;</td>
+		<td align="right" style="background-color: {$averages.$name.per|percentage_color}">{$averages.$name.per}%</td>
+	</tr>
+{/foreach}
+</table>
+
+{include file='inc_foot.txt'}

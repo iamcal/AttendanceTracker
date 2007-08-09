@@ -1,0 +1,76 @@
+{include file='inc_head.txt'}
+
+<h1>{$raid.d} - {$raid.who}</h1>
+
+<p><a href="raid.php?d={$raid.d}">&laquo; Back to raid detail</a></p>
+
+<h2>Edit Timeline</h2>
+
+<form action="raid_edit_timeline.php" method="post">
+<input type="hidden" name="add_item" value="1" />
+<input type="hidden" name="d" value="{$raid.d|escape}" />
+
+<table border="1" cellpadding="4" cellspacing="0">
+	<tr>
+		<th>Timestamp</th>
+		<th>Time</th>
+		<th>Event</th>
+		<th>Member</th>
+		<th>-</th>
+	</tr>
+{foreach from=$timeline item='row'}
+	<tr>
+		<td>{$row.t}</td>
+		<td>{$row.t|format_time}</td>
+{if $row.event=='loot'}
+		<td><a href="loot.php?id={$row.id}">{$row.event|format_event}</a></td>
+{else}
+		<td>{$row.event|format_event}</td>
+{/if}
+		<td>{$row.who|default:'&nbsp;'}</td>
+		<td><a href="raid_edit_timeline.php?d={$raid.d|escape}&remove_item={$row.id}">delete</a></td>
+	</tr>
+{/foreach}
+	<tr>
+		<td>&nbsp;</td>
+		<td><input type="text" name="time" style="width: 100px" /></td>
+		<td><select name="event" id="evtelm" onclick="update_event();">
+{foreach from=$events item='label' key='event'}
+			<option value="{$event}">{$label}</option>
+{/foreach}
+		</select></td>
+		<td><select name="who" id="whoelm">
+{foreach from=$names item='name'}
+			<option value="{$name|escape}">{$name|escape}</option>
+{/foreach}
+		</select></td>
+		<td><input type="submit" value="Add" /></td>
+	</tr>
+</table>
+
+</form>
+
+<script>{literal}
+
+function update_event(){
+
+	var evt_elm = document.getElementById('evtelm');
+	var who_elm = document.getElementById('whoelm');
+
+	var val = evt_elm.options[evt_elm.selectedIndex].value;
+
+	var show_who = 0;
+
+{/literal}
+{foreach from=$user_events item='event'}
+	if (val == '{$event}') show_who = 1;
+{/foreach}
+{literal}
+
+	who_elm.style.display = show_who ? 'inline' : 'none';
+}
+
+
+</script>{/literal}
+
+{include file='inc_foot.txt'}

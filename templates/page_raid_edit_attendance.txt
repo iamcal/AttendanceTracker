@@ -1,0 +1,56 @@
+{include file='inc_head.txt'}
+
+<h1>{$raid.d} - {$raid.who}</h1>
+
+<p><a href="raid.php?d={$raid.d}">&laquo; Back to raid detail</a></p>
+
+<h2>Edit Attendance</h2>
+
+<form action="raid_edit_attendance.php" method="post">
+<input type="hidden" name="save_attendance" value="1" />
+<input type="hidden" name="d" value="{$raid.d|escape}" />
+
+<table border="1" cellpadding="4" cellspacing="0">
+	<tr>
+{foreach from=$class_map item='class' key='classid'}
+		<th>{$class}</th>
+{/foreach}
+	</tr>
+	<tr valign="top">
+{foreach from=$class_map item='class' key='classid'}
+		<td>
+{foreach from=$names item='row'}
+{if $row.member_class_id == $classid}
+{assign var='name' value=$row.member_name}
+{if $attendance.$name}
+			<div id="{$row.member_name}div" style="background-color: #00C000;">
+				<input type="checkbox" value="1" id="{$row.member_name}cb" name="{$row.member_name}cb" onclick="update_cb('{$row.member_name}');" checked />
+{else}
+			<div id="{$row.member_name}div">
+				<input type="checkbox" value="1" id="{$row.member_name}cb" name="{$row.member_name}cb" onclick="update_cb('{$row.member_name}');" />
+{/if}
+				<label for="{$row.member_name}cb" onclick="update_cb('{$row.member_name}');">{$row.member_name}</label>
+			</div>
+{/if}
+{/foreach}
+		</td>
+{/foreach}
+	</tr>
+</table>
+
+<p><input type="submit" value="Save Attendance Changes" /></p>
+
+</form>
+
+
+<script>{literal}
+
+function update_cb(name){
+	var cb = document.getElementById(name+'cb');
+	var div = document.getElementById(name+'div');
+
+	div.style.backgroundColor = cb.checked ? '#00C000' : 'white';
+}
+
+</script>{/literal}
+{include file='inc_foot.txt'}

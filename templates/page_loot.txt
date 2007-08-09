@@ -1,0 +1,40 @@
+{include file='inc_head.txt'}
+
+<h1>{$raid.d} - {$raid.who}</h1>
+
+<p><a href="raid.php?d={$raid.d}">&laquo; Back to raid detail</a></p>
+
+<h2>Loot Event</h2>
+
+<table border="0" cellpadding="0" cellspacing="20">
+<tr valign="top">
+{foreach from=$lists item='list' key='tier'}
+<td>
+
+	<table border="1" cellpadding="4" cellspacing="0">
+		<tr>
+			<th colspan="3">Tier {$tier} Standings</th>
+		</tr>
+{foreach from=$list item='row'}
+		<tr>
+			<td>{$row.who}</td>
+			<td>{$row.rank|format_rank}</td>
+			<td>{$row.dkp}</td>
+		</tr>
+{/foreach}
+	</table>
+
+</td>
+{/foreach}
+</tr>
+</table>
+
+<h2>Add to DKP tracker</h2>
+
+<textarea style="width: 200px; height: 400px">
+{foreach from=$members item='who'}
+{$who|escape}
+{/foreach}
+</textarea>
+
+{include file='inc_foot.txt'}

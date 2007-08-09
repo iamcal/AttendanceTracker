@@ -1,0 +1,19 @@
+<?
+	#mysql_connect('localhost', 'root', 'PASSWORD');
+	#mysql_select_db('eternal_dkp');
+
+	mysql_connect('localhost', 'timelessguild', 'PASSWORD');
+	mysql_select_db('timelessguild_net');
+
+
+	include('db.txt');
+	include('smarty.txt');
+	include('lib.txt');
+
+	function dumper($foo){
+		echo "<pre style=\"text-align: left;\">";
+		echo HtmlSpecialChars(var_export($foo, 1));
+		echo "</pre>\n";
+	}
+
+?>
