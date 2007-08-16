@@ -4,7 +4,7 @@
 
 <p><a href="raid.php?d={$raid.d}">&laquo; Back to raid detail</a></p>
 
-<h2>Loot Event</h2>
+<h2>{'g:i a'|date:$event.ts} Loot Event</h2>
 
 <table border="0" cellpadding="0" cellspacing="20">
 <tr valign="top">

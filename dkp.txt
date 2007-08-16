@@ -1,6 +1,6 @@
 <?
 	#
-	# $Id: dkp.txt,v 1.1 2007/08/09 06:24:56 cal Exp $
+	# $Id: dkp.txt,v 1.2 2007/08/16 20:02:33 cal Exp $
 	#
 
 	########################################################################################################################
@@ -118,6 +118,8 @@
 				$x_spent = floatval($spent[$name][$t]);
 
 				$standings[$name][$t] = $x_adjust + $x_earned - $x_spent;
+
+				$standings[$name][$t] = round($standings[$name][$t] * 100) / 100;
 
 				#echo "\$standings[$name][$t] = $x_adjust + $x_earned - $x_spent;<br />";
 			}
