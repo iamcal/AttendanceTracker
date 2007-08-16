@@ -548,4 +548,180 @@
 	$smarty->register_modifier('format_event', 'format_event');
 
 	########################################################################
+
+	function get_raid_report($raid, $timeline){
+
+		if (!$raid[mins]) return '';
+		if (!count($timeline)) return '';
+
+		$start	= 0;
+		$end	= 0;
+		$found_end = 0;
+
+		foreach ($timeline as $event){
+			if ($event[event] == 'start') $start = $event[t];
+			if ($event[event] == 'end'){ $end = $event[t]; $found_end = 1; }
+			if (!$start){ $start = $event[t]; }
+			if (!$found_end){ $end = $event[t]; }
+		}
+
+		$ts_start = date('g:i', StrToTime($start));
+		$ts_end = date('g:i', StrToTime($end));
+
+		$out = "Raid ran from $ts_start to $ts_end ($raid[mins] mins). Partial attendance:\n\n";
+
+
+		#
+		# aggregate event list by player
+		#
+
+		$events_by_char = array();
+
+		foreach ($timeline as $event){
+
+			if ($event[who]){
+
+				$events_by_char[$event[who]][] = $event;
+			}
+		}
+
+
+		#
+		# loop through chars
+		#
+
+		$partials = array();
+
+		foreach ($events_by_char as $who => $events){
+
+			$events[] = array(
+				'event'	=> 'end',
+				't'	=> $end,
+			);
+
+			$total_mins = 0;
+
+			$last_time = $start;
+			$last_state = '?';
+
+			$changes = array();
+
+			foreach ($events as $event){
+
+				$is_add = is_adding_event($event[event]);
+				$is_rem = is_removing_event($event[event]);
+
+				#
+				# for the first event, we'll need to set up the initial state
+				#
+
+				if ($last_state == '?'){
+
+					switch ($event[event]){
+						case "joined"		: $last_state = 'out'; break;
+						case "left"		: $last_state = 'in'; break;
+						case "onlist"		: $last_state = 'out'; break;
+						case "offlist"		: $last_state = 'list'; break;
+						case "list-raid"	: $last_state = 'list'; break;
+						case "raid-list"	: $last_state = 'in'; break;
+						case "mains"		: $last_state = 'in'; break;
+					}
+				}
+
+
+				#
+				# what is the next state going to be?
+				#
+
+				switch ($event[event]){
+					case "joined"		: $next_state = 'in'; break;
+					case "left"		: $next_state = 'out'; break;
+					case "onlist"		: $next_state = 'list'; break;
+					case "offlist"		: $next_state = 'out'; break;
+					case "list-raid"	: $next_state = 'in'; break;
+					case "raid-list"	: $next_state = 'list'; break;
+					case "mains"		: $next_state = 'in'; break;
+					case "end"		: $next_state = 'out'; break;
+				}
+
+
+				#
+				# if next state doesn't match, store an event
+				#
+
+				if ($next_state != $last_state){
+
+					$next_time = $event[t];
+
+					if ($last_state != 'out'){
+
+						$mins = round((StrToTime($next_time) - StrToTime($last_time)) / 60);
+
+						$changes[] = array(
+							'state'	=> $last_state,
+							'start'	=> $last_time,
+							'end'	=> $next_time,
+							'mins'	=> $mins,
+						);
+
+						$total_mins += $mins;
+					}
+
+					$last_state = $next_state;
+					$last_time = $next_time;
+				}
+			}
+
+			$partials[] = array(
+				'who'		=> $who,
+				'mins'		=> $total_mins,
+				'changes'	=> $changes,
+			);
+		}
+
+
+		#
+		# build the report!
+		#
+
+		$limit_one = round($raid[mins] * 0.9);
+		$limit_half = round($raid[mins] * 0.5);
+
+		foreach ($partials as $partial){
+
+			$states = array();
+			foreach ($partial[changes] as $change){
+
+				$state = '?';
+				if ($change[state] == 'in'){ $state = 'in'; }
+				if ($change[state] == 'list'){ $state = 'on list'; }
+
+				$a = date('g:i', StrToTime($change[start]));
+				$b = date('g:i', StrToTime($change[end]));
+
+				$states[] = "$state $a-$b";
+			}
+
+			$out .= "$partial[who] - ".implode(', ', $states)." ($partial[mins]/$raid[mins])";
+
+			if ($partial[mins] >= $limit_one){
+
+				$out .= " - 1 dkp\n";
+
+			}else if ($partial[mins] >= $limit_half){
+
+				$out .= " - 0.5 dkp\n";
+			}else{
+				$out .= " - 0 dkp\n";
+			}
+		}
+
+		$out .= "\n";
+		$out .= "1 dkp limit - $limit_one mins\n";
+		$out .= "0.5 dkp limit - $limit_half mins\n";
+
+		return $out;
+	}
+
+	########################################################################
 ?>

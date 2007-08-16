@@ -6,7 +6,7 @@
 
 <p>
 	<b>Date:</b> {$raid.d}<br />
-	<b>Focus:</b> {$raid.who}<br />
+	<b>Focus:</b> {$raid.who} <a href="raid_edit.php?d={$raid.d}" class="inlineedit">edit</a><br />
 </p>
 
 <h2>
@@ -40,6 +40,10 @@
 	</tr>
 </table>
 
+<p>&nbsp;</p>
+
+<table border="0" cellpadding="0" cellspacing="0"><tr valign="top"><td>
+
 <h2>
 	Timeline
 	<a href="raid_edit_timeline.php?d={$raid.d}" class="inlineedit">edit</a>
@@ -57,5 +61,17 @@
 	</tr>
 {/foreach}
 </table>
+
+</td><td width="100"></td><td>
+
+{if $report|strlen}
+
+<h2>Partial Attendance</h2>
+
+{$report|chop|nl2br}
+
+{/if}
+
+</td></tr></table>
 
 {include file='inc_foot.txt'}

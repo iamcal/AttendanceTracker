@@ -1,0 +1,30 @@
+{include file='inc_head.txt'}
+
+<h1>{$raid.d} - {$raid.who}</h1>
+
+<p><a href="raid.php?d={$raid.d}">&laquo; Back to raid detail</a></p>
+
+<h2>Edit Focus</h2>
+
+<form action="raid_edit.php" method="post">
+<input type="hidden" name="d" value="{$raid.d}" />
+<input type="hidden" name="done" value="1" />
+
+<table border="1">
+
+	<tr>
+		<td>Focus:</td>
+		<td><input type="text" name="focus" value="{$raid.who|escape}" /></td>
+	</tr>
+
+	<tr>
+		<td>&nbsp;</td>
+		<td><input type="submit" value="Save Changes" /></td>
+	</tr>
+
+</table>
+
+
+</form>
+
+{include file='inc_foot.txt'}

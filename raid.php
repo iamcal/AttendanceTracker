@@ -1,6 +1,6 @@
 <?
 	#
-	# $Id: raid.php,v 1.1 2007/08/09 06:24:56 cal Exp $
+	# $Id: raid.php,v 1.2 2007/08/16 19:51:10 cal Exp $
 	#
 
 	include('init.txt');
@@ -85,6 +85,15 @@
 	#dumper($timeline);
 	$smarty->assign_by_ref('timeline', $timeline);
 
+
+	#
+	# fetch the report
+	#
+
+	$report = get_raid_report($raid, $timeline);
+
+	#dumper($report);
+	$smarty->assign_by_ref('report', $report);
 
 
 	#
