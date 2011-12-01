@@ -19,4 +19,4 @@ It has some serious security issues (like the database password being in a text 
 
 ## Installation
 
-The database schema in <code>schema.sql</code> is for the core tables - it also assumes you have an EQDKP install with table prefix <code>eqdkp_bees_</code>. It also makes some assuptions about the way you set up tiers in EQDKP. Yeah, sorry.
+The database schema in <code>schema.sql</code> is for the core tables - it also assumes you have an EQDKP install with table prefix <code>eqdkp\_bees\_</code>. It also makes some assuptions about the way you set up tiers in EQDKP. Yeah, sorry.
