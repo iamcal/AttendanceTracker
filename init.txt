@@ -2,6 +2,8 @@
 	mysql_connect('localhost', 'root', 'root');
 	mysql_select_db('attendance');
 
+	putenv('TZ=PST8PDT');
+	date_default_timezone_set('America/Los_Angeles');
 
 	include('db.txt');
 	include('smarty.txt');
