@@ -1,6 +1,6 @@
 <?
 	#
-	# $Id: raid.php,v 1.2 2007/08/16 19:51:10 cal Exp $
+	# $Id: raid.php,v 1.1 2007/08/09 06:24:56 cal Exp $
 	#
 
 	include('init.txt');

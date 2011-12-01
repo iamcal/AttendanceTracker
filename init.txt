@@ -1,9 +1,6 @@
 <?
-	#mysql_connect('localhost', 'root', 'PASSWORD');
-	#mysql_select_db('eternal_dkp');
-
-	mysql_connect('localhost', 'timelessguild', 'PASSWORD');
-	mysql_select_db('timelessguild_net');
+	mysql_connect('localhost', 'root', 'root');
+	mysql_select_db('attendance');
 
 
 	include('db.txt');
